@@ -2,7 +2,7 @@
 
 > Improved Magento 2 debug hints for layout and blocks
 
-_Nice GIF Here_
+![Example Usage](docs/example.gif)
 
 This module does not change any element styles or does not add any extra styles
 for highlighting them, therefore **enabling hints does not affect website look,
