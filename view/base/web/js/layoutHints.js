@@ -1,8 +1,16 @@
 define([], function () {
+    var colors = {
+        blue: "rgb(36, 47, 155)",
+        highlightBackground: "rgba(219, 223, 253, 0.85)",
+        navy: "rgb(42, 37, 80)"
+    }
+    var labelStyle = "padding-left: 3px; padding-right: 3px; border-radius: 3px; margin-right: .5em; display: inline-block; cursor: pointer;"
+    var labelStyleBlue = `${labelStyle} background: ${colors.blue}; color: white;`
+    var labelStyleNavy = `${labelStyle} background: ${colors.navy}; color: white;`
+
     var highlightEls = []
 
     return function layoutHints (layout) {
-        layout.name = layout.handles.join("; ")
         layout.elements = [document.body]
         document.body.mageLayout = layout
 
@@ -107,24 +115,28 @@ define([], function () {
     }
 
     function printLayout (layoutElement, { collapse = false, withParent = true, withChildren = true, groupPrefix = '' } = {}) {
-        var groupName = layoutElement.name
+        var groupName = layoutElement.name ? [layoutElement.name] : layoutElement.handles
+        var groupNameWithStyles = '%c' + groupName.join('%c')
 
-        layoutElement.label
+        var label = layoutElement.label || ''
+        var mainLabelStyles = 'font-size: 1.25em; font-weight: bold;'
 
         if (!collapse) {
             console.group(
-                `%c${groupName}`,
-                "font-size: 1.25em; font-weight: bold; background: rgb(36, 47, 155); color: rgb(219, 223, 253); padding: 3px; border-radius: 3px; display: inline-block; cursor: pointer;"
+                `${groupNameWithStyles}%c${label}`,
+                ...groupName.map(a => `${labelStyleBlue} ${mainLabelStyles}`),
+                `${labelStyleNavy} ${mainLabelStyles}`
             )
         } else {
             console.groupCollapsed(
-                `%c${groupPrefix}%c${groupName}`,
+                `%c${groupPrefix}${groupNameWithStyles}%c${label}`,
                 'font-weight:bold',
-                'background: rgb(36, 47, 155); color: rgb(219, 223, 253); padding: 0 3px; border-radius: 3px; cursor: pointer'
+                ...groupName.map(a => labelStyleBlue),
+                `${labelStyleNavy}`
             )
         }
 
-        console.log(`Name:\n%c${layoutElement.name}`, "font-weight: bold;");
+        console.log(`Name:\n%c${groupName.join(" ")}`, "font-weight: bold;");
 
         if (layoutElement.label) {
             console.log(`Label:\n%c${layoutElement.label}`, "font-weight: bold;");
@@ -184,19 +196,18 @@ define([], function () {
     }
 
     function highlightMageElements (layoutElement, printOnClick = true) {
-        var alias = layoutElement.alias ? `Alias: ${layoutElement.alias}` : ''
-        var label = layoutElement.label ? `Label: <u>${layoutElement.label}</u>` : ''
+        var names = layoutElement.name ? [layoutElement.name] : layoutElement.handles
+        var namesHtml = names.map(n => `<b style="${labelStyleBlue}">${n}</b>`).join('')
 
-        var title = [`<b>${layoutElement.name}</b>`, alias, label].filter(a => a).join("; ")
-        var content = `<p>${title}</p>`
+        var alias = layoutElement.alias ? `Alias: <b>${layoutElement.alias}</b>` : ''
+        var label = layoutElement.label ? `<span style="${labelStyleNavy}">${layoutElement.label}</span>` : ''
+
+        var content = `<p>${namesHtml} ${alias} ${label}</p>`
 
         if (layoutElement.block) {
             content += `
-                <p>
-                    <b>${layoutElement.block.class}</b>
-                    <br/>
-                    <b>${layoutElement.block.template}</b>
-                </p>
+                <p><code style="background: transparent">${layoutElement.block.class}</code></p>
+                <p><code style="background: transparent">${layoutElement.block.template}</code></p>
             `
         }
 
@@ -212,9 +223,9 @@ define([], function () {
     function highlightElement (element, html, printOnClick = true) {
         var highlightEl = document.createElement('div')
         highlightEl.style.position = "absolute"
-        highlightEl.style.backgroundColor = "rgba(219, 223, 253, 0.85)"
-        highlightEl.style.border = "1px solid rgb(155, 163, 235)"
-        highlightEl.style.color = "rgb(36, 47, 155)"
+        highlightEl.style.backgroundColor = colors.highlightBackground
+        highlightEl.style.border = `1px solid ${colors.blue}`
+        highlightEl.style.color = colors.blue
         highlightEl.style.textShadow = "0 0 1px white"
         highlightEl.style.zIndex = 999999
         highlightEl.style.padding = ".5em"
