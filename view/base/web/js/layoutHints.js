@@ -109,14 +109,19 @@ define([], function () {
     function printLayout (layoutElement, { collapse = false, withParent = true, withChildren = true, groupPrefix = '' } = {}) {
         var groupName = layoutElement.name
 
-        if (layoutElement.label) {
-            groupName += ` (L: ${layoutElement.label})`
-        }
+        layoutElement.label
 
         if (!collapse) {
-            console.group(`%c${groupName}`, "font-size: 1.25em; font-weight: bold; background: rgb(36, 47, 155); color: rgb(219, 223, 253); padding: 3px; display: inline-block; cursor: pointer;")
+            console.group(
+                `%c${groupName}`,
+                "font-size: 1.25em; font-weight: bold; background: rgb(36, 47, 155); color: rgb(219, 223, 253); padding: 3px; border-radius: 3px; display: inline-block; cursor: pointer;"
+            )
         } else {
-            console.groupCollapsed(`%c${groupPrefix}%c${groupName}`, 'font-weight:bold', 'background: rgb(36, 47, 155); color: rgb(219, 223, 253); cursor: pointer')
+            console.groupCollapsed(
+                `%c${groupPrefix}%c${groupName}`,
+                'font-weight:bold',
+                'background: rgb(36, 47, 155); color: rgb(219, 223, 253); padding: 0 3px; border-radius: 3px; cursor: pointer'
+            )
         }
 
         console.log(`Name:\n%c${layoutElement.name}`, "font-weight: bold;");
@@ -170,6 +175,10 @@ define([], function () {
 
         var elementUnderMouse = document.elementsFromPoint(event.clientX, event.clientY).shift()
         var closestMagentoElement = findMageElement(elementUnderMouse)
+
+        if (!closestMagentoElement) {
+            return
+        }
 
         highlightMageElements(closestMagentoElement.mageLayout)
     }
