@@ -1,0 +1,20 @@
+{
+    "name": "kingfisherdirect/magento2-better-debug-hints",
+    "type": "magento2-module",
+    "license": "MIT",
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "KingfisherDirect\\BetterDebugHints\\": ""
+        }
+    },
+    "authors": [
+        {
+            "name": "Kamil",
+            "email": "kamil@kingfisherdirect.co.uk"
+        }
+    ],
+    "require": {}
+}
