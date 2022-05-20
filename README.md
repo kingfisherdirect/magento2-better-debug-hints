@@ -33,7 +33,7 @@ Open your Magento page with an extra GET parameter `?ath=1`. For example:
 
 **Console Helper**
 
-Use `i()` function to investigate any HTML element. To inspect currently selected element in inspector use `i($0)`
+Use `layout()` function to investigate any HTML element. To inspect currently selected element in inspector use `layout($0)`
 
 ## Credits
 
