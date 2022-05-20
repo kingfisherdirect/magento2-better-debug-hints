@@ -68,8 +68,8 @@ class LayoutHints
                         blockEditUrl: '${blockEditUrl}',
                     });
 
-                    if (!window.i) {
-                        window.i = layoutHints.inspect
+                    if (!window.layout) {
+                        window.layout = layoutHints.inspect.bind(layoutHints)
                     }
                 });
             </script>

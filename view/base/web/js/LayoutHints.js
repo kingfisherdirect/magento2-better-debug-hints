@@ -54,15 +54,15 @@ define([
         }
 
         inspect (element) {
-            var inspectable = findInspectable(element)
+            var inspectable = this.findInspectable(element)
 
             if (!inspectable) {
                 console.error("No element found")
                 return
             }
 
-            highlight(inspectable, { printOnClick: false })
-            consolePrint(inspectable)
+            this.highlight(inspectable, { printOnClick: false })
+            this.consolePrint(inspectable)
         }
 
         findInspectable (element) {
