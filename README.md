@@ -4,9 +4,13 @@
 
 ![Example Usage](docs/example.gif)
 
-This module does not change any element styles or does not add any extra styles
-for highlighting them, therefore **enabling hints does not affect website look,
-feel nor behaviour.**
+Features:
+
+- **Does not affect structure** or existing styles 👌
+- Detects **Knockout** components and templates 🤜
+- Uses dev-tools like **element picker** to select elements 🔫
+- Prints **browseable structure** and internal informations in console 👀
+- Adds a button to open edit page for CMS Blocks 🖊️
 
 ## Installation
 
@@ -29,7 +33,7 @@ Open your Magento page with an extra GET parameter `?ath=1`. For example:
 
 **Console Helper**
 
-Use `layout()` function to investigate any HTML element. To inspect currently selected element in inspector use `layout($0)`
+Use `i()` function to investigate any HTML element. To inspect currently selected element in inspector use `i($0)`
 
 ## Credits
 
