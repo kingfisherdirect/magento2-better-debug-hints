@@ -3,7 +3,10 @@
 namespace KingfisherDirect\BetterDebugHints\Plugin\View;
 
 use KingfisherDirect\BetterDebugHints\Helper\Config;
+use Magento\Backend\Helper\Data;
+use Magento\Cms\Block\Widget\Block as WidgetBlock;
 use Magento\Framework\Interception\InterceptorInterface;
+use Magento\Framework\UrlInterface;
 use Magento\Framework\View\Element\AbstractBlock;
 use Magento\Framework\View\Layout;
 use Magento\Framework\View\Layout\Element;
@@ -12,11 +15,13 @@ class LayoutHints
 {
     private Layout $layout;
     private Config $config;
+    private Data $helperBackend;
 
-    public function __construct(Layout $layout, Config $config)
+    public function __construct(Layout $layout, Config $config, Data $helperBackend)
     {
         $this->layout = $layout;
         $this->config = $config;
+        $this->helperBackend = $helperBackend;
     }
 
     public function aroundRenderElement(Layout $layout, \Closure $proceed, string $name, $useCache = true): string
@@ -52,15 +57,28 @@ class LayoutHints
         $structure = $this->getStructure();
         $structureJson = json_encode($structure);
 
+        $blockEditUrl = $this->getBlockEditUrl();
+
         return <<<HTML
             <script>
                 window.layoutStructure = {$structureJson};
 
-                require(['KingfisherDirect_BetterDebugHints/js/layoutHints'], function (layoutHints) {
-                    window.layout = layoutHints(window.layoutStructure);
+                require(['KingfisherDirect_BetterDebugHints/js/LayoutHints'], function (LayoutHints) {
+                    var layoutHints = new LayoutHints(window.layoutStructure, {
+                        blockEditUrl: '${blockEditUrl}',
+                    });
+
+                    if (!window.i) {
+                        window.i = layoutHints.inspect
+                    }
                 });
             </script>
         HTML;
+    }
+
+    private function getBlockEditUrl(): string
+    {
+        return $this->helperBackend->getUrl('cms/block/edit', ['block_id' => '__id__']);
     }
 
     private function getStructure($name = 'root'): array
@@ -95,6 +113,10 @@ class LayoutHints
 
         if ($block) {
             $result['block'] = $this->getBlockInfo($block);
+        }
+
+        if ($block instanceof WidgetBlock) {
+            $result['blockId'] = $block->getBlockId();
         }
 
         return $result;
