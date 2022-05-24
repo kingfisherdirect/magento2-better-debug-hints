@@ -2,6 +2,7 @@ define(['../highlights'], function (highlights) {
     return class MageLayoutDebugger {
         constructor (layoutHints, layoutTree, options = {}) {
             this.layoutHints = layoutHints
+            this.mageInitDebugger = options.mageInitDebugger
             this.blockEditUrl = options.blockEditUrl
 
             this.largerFontSize = options.largerFontSize || ''
@@ -98,7 +99,7 @@ define(['../highlights'], function (highlights) {
                 throw new Error("This element is not inspectable!")
             }
 
-            return { type: 'mage', element, layout: element.mageLayout }
+            return { layout: element.mageLayout }
         }
 
         highlight (data, { printOnClick = true } = {}) {
@@ -127,7 +128,17 @@ define(['../highlights'], function (highlights) {
             }
 
             for (var domEl of layoutElement.elements) {
-                var highlightEl = highlights.create(domEl, content)
+                var elementContent = content
+
+                if (this.mageInitDebugger) {
+                    var initInspectables = this.mageInitDebugger.getInspectablesInside(domEl)
+
+                    if (initInspectables.length > 0) {
+                        elementContent += `<p>Mage Inits: <b>${initInspectables.length}</b></p>`
+                    }
+                }
+
+                var highlightEl = highlights.create(domEl, elementContent)
 
                 if (printOnClick) {
                     highlightEl.addEventListener("click", () => this.consolePrint(data))
@@ -150,7 +161,7 @@ define(['../highlights'], function (highlights) {
             if (!collapse) {
                 console.group(
                     `${groupNameWithStyles}%c${blockId}%c${label}`,
-                    ...groupName.map(a => `${this.labelStyleBlue} font-size: ${this.largerFontSize}`),
+                    ...groupName.map(() => `${this.labelStyleBlue} font-size: ${this.largerFontSize}`),
                     `${this.labelStyleBrown} font-size: ${this.largerFontSize}`,
                     `${this.labelStyleNavy} font-size: ${this.largerFontSize}`
                 )
@@ -205,6 +216,23 @@ define(['../highlights'], function (highlights) {
 
             if (layoutElement.elements && layoutElement.elements.length > 0) {
                 console.log(`DOM:`, ...layoutElement.elements)
+            }
+
+            if (this.mageInitDebugger) {
+                var initInspectables = this.mageInitDebugger.getInspectablesInside(layoutElement.elements)
+
+                if (initInspectables && initInspectables.length > 0) {
+                    console.log(`Mage Inits (${initInspectables.length}):`)
+
+                    for (var initInspectable of initInspectables) {
+                        if (initInspectable.script) {
+                            console.log(initInspectable.el, JSON.parse(initInspectable.mageInit), initInspectable.script)
+                            continue
+                        }
+
+                        console.log(initInspectable.el, JSON.parse(initInspectable.mageInit))
+                    }
+                }
             }
 
             console.groupEnd()

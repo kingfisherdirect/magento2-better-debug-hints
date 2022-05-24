@@ -1,8 +1,9 @@
 define([
     './highlights',
     './debug/KnockoutDebugger',
-    './debug/MageLayoutDebugger'
-], function (highlights, KnockoutDebugger, MageLayoutDebugger) {
+    './debug/MageLayoutDebugger',
+    './debug/MageInitDebugger'
+], function (highlights, KnockoutDebugger, MageLayoutDebugger, MageInitDebugger) {
     var colors = {
         blue4: "36 47 155",
         blue3: "100 111 212",
@@ -25,7 +26,10 @@ define([
             LayoutHints.instance = this
 
             this.debuggers = {}
-            this.debuggers.mage = new MageLayoutDebugger(
+
+            this.debuggers.mageInit = new MageInitDebugger(this)
+
+            this.debuggers.mageLayout = new MageLayoutDebugger(
                 this,
                 mageLayoutTree,
                 {
@@ -33,7 +37,8 @@ define([
                     labelStyleBlue,
                     labelStyleNavy,
                     labelStyleBrown,
-                    blockEditUrl: initOptions.blockEditUrl
+                    blockEditUrl: initOptions.blockEditUrl,
+                    mageInitDebugger: this.debuggers.mageInit
                 }
             )
 
@@ -70,11 +75,12 @@ define([
                 for (var type in this.debuggers) {
                     var typeDebugger = this.debuggers[type]
 
-                    if (!typeDebugger.isInspectable(element)) {
+                    if (typeof typeDebugger.isInspectable !== 'function' || !typeDebugger.isInspectable(element)) {
                         continue
                     }
 
                     var inspectable = typeDebugger.getInspectable(element)
+                    inspectable.element = element
                     inspectable.type = type
 
                     return inspectable
@@ -105,7 +111,7 @@ define([
         }
 
         highlight (data, options) {
-            if (!this.debuggers[data.type]) {
+            if (!this.debuggers[data.type] || typeof this.debuggers[data.type].highlight !== 'function') {
                 throw new Error(`Cannot highlight element of type ${data.type}`)
             }
 
@@ -113,7 +119,7 @@ define([
         }
 
         consolePrint (data, options) {
-            if (!this.debuggers[data.type]) {
+            if (!this.debuggers[data.type] || typeof this.debuggers[data.type].consolePrint !== 'function') {
                 throw new Error(`Cannot consolePrint element of type ${data.type}`)
             }
 
