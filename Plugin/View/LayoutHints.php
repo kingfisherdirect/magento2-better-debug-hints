@@ -71,6 +71,10 @@ class LayoutHints
                     if (!window.layout) {
                         window.layout = layoutHints.inspect.bind(layoutHints)
                     }
+
+                    if (!window.lh) {
+                        window.lh = layoutHints
+                    }
                 });
             </script>
         HTML;

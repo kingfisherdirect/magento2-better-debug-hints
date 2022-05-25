@@ -12,6 +12,7 @@ Features:
 - Uses dev-tools like **element picker** to select elements 🔫
 - Prints **browseable structure** and internal informations in console 👀
 - Adds a button to open edit page for CMS Blocks 🖊️
+- Generates Graphviz visualization for Layout
 
 ## Installation
 
@@ -35,6 +36,10 @@ Open your Magento page with an extra GET parameter `?ath=1`. For example:
 **Console Helper**
 
 Use `layout()` function to investigate any HTML element. To inspect currently selected element in inspector use `layout($0)`
+
+**Graphviz Layout**
+
+Run `lh.debuggers.mageLayout.graph()` in developer tools console. Graph will be copied into clipboard. You can visualise it online here - http://magjac.com/graphviz-visual-editor/ or using this command `echo 'GRAPH_OUTPUT' | dot -Tsvg > output.svg`
 
 ## Credits
 

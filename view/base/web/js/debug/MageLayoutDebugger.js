@@ -237,5 +237,109 @@ define(['../highlights'], function (highlights) {
 
             console.groupEnd()
         }
+
+        graph (el) {
+            var inspectable = this.getInspectable(el || document.body)
+
+            var graph = this.graphLayout(inspectable.layout)
+
+            var fullGraph = `
+digraph {
+    rankdir="LR"
+    splines=polyline
+
+    graph [autosize=false]
+
+    graph [fontname = "Courier"]
+    node [fontname = "Courier"]
+    edge [fontname = "Courier"]
+
+    ${graph}
+}
+`
+
+            navigator.clipboard.writeText(fullGraph)
+                .then(() => console.log("Written to clipboard"))
+
+            return `http://magjac.com/graphviz-visual-editor/?dot=${encodeURIComponent(fullGraph)}`
+        }
+
+        graphLayout (layout, parentName) {
+            var name = layout.handles ? "root" : layout.name
+
+            var attributes = {
+                shape: "box",
+                // label: `${name}`,
+                label: `<tr><td align="left" width="100%"><b>${name}</b></td></tr>`,
+                style: [],
+            }
+
+            if (layout.block) {
+                var className = layout.block.class.replace(/\\/g, "\\\\")
+                // attributes.label += `\\l${className}`
+                attributes.label += `<tr><td align="left" width="100%">${className}</td></tr>`
+                attributes.style.push('rounded')
+
+                if (layout.block.template) {
+                    var template = layout.block.template.replace(/^([a-zA-Z\/\-\_]+(\/app\/code|\/vendor\/))/, "$2")
+
+                    // attributes.label += `\\l${template}`
+                    attributes.label += `<tr><td align="left" width="100%">${template}</td></tr>`
+                }
+
+                if (layout.blockId) {
+                    attributes.style.push('filled')
+                    attributes.fillcolor = "gray90"
+                    attributes.color = "gray40"
+                    attributes.fontcolor = "gray40"
+                }
+            } else {
+                attributes.style.push('filled')
+                attributes.fillcolor = "lightyellow"
+            }
+
+            attributes.label = `<table border="0">${attributes.label}</table>`
+            // attributes.label += '\\l'
+
+            if (layout.alias) {
+                attributes.color = "blue"
+            }
+
+            var graph = `"${name}" [${this.objectToDotAttributes(attributes, { htmlLabel: true })}];` + "\n"
+
+            if (parentName) {
+                graph += `"${parentName}" -> "${name}";` + "\n"
+            }
+
+            if (layout.children) {
+                for (let childName in layout.children) {
+                    graph += this.graphLayout(layout.children[childName], name)
+                }
+            }
+
+            return graph
+        }
+
+        objectToDotAttributes (object, { htmlLabel = false } = {}) {
+            var attributes = []
+
+            for (let key in object) {
+                let value = object[key]
+
+                if (Array.isArray(value)) {
+                    value = value.join(",")
+                }
+
+                if (key === 'label' && htmlLabel) {
+                    value = `<${value}>`
+                } else if (typeof value === 'string') {
+                    value = `"${value}"`
+                }
+
+                attributes.push(`${key}=${value}`)
+            }
+
+            return attributes.join(', ')
+        }
     }
 })
