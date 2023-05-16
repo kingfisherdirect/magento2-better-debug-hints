@@ -6,29 +6,28 @@ use KingfisherDirect\BetterDebugHints\Helper\Config;
 use Magento\Backend\Helper\Data;
 use Magento\Cms\Block\Widget\Block as WidgetBlock;
 use Magento\Framework\Interception\InterceptorInterface;
-use Magento\Framework\UrlInterface;
 use Magento\Framework\View\Element\AbstractBlock;
 use Magento\Framework\View\Layout;
 use Magento\Framework\View\Layout\Element;
 
 class LayoutHints
 {
-    private Layout $layout;
-    private Config $config;
-    private Data $helperBackend;
+    private ?Layout $layout;
+    private string $blockEditUrl;
+    private bool $isEnabled;
 
     public function __construct(Layout $layout, Config $config, Data $helperBackend)
     {
-        $this->layout = $layout;
-        $this->config = $config;
-        $this->helperBackend = $helperBackend;
+        $this->blockEditUrl = $helperBackend->getUrl('cms/block/edit', ['block_id' => '__id__']);
+        $this->isEnabled = $config->isHintEnabled();
+        $this->layout = $this->isEnabled ? $layout : null;
     }
 
     public function aroundRenderElement(Layout $layout, \Closure $proceed, string $name, $useCache = true): string
     {
         $html = $proceed($name, $useCache);
 
-        if (!$this->config->isHintEnabled()) {
+        if (!$this->isEnabled || !$html || !trim($html)) {
             return $html;
         }
 
@@ -65,7 +64,7 @@ class LayoutHints
 
                 require(['KingfisherDirect_BetterDebugHints/js/LayoutHints'], function (LayoutHints) {
                     var layoutHints = new LayoutHints(window.layoutStructure, {
-                        blockEditUrl: '${blockEditUrl}',
+                        blockEditUrl: '{$blockEditUrl}',
                     });
 
                     if (!window.layout) {
@@ -82,7 +81,7 @@ class LayoutHints
 
     private function getBlockEditUrl(): string
     {
-        return $this->helperBackend->getUrl('cms/block/edit', ['block_id' => '__id__']);
+        return $this->blockEditUrl;
     }
 
     private function getStructure($name = 'root'): array

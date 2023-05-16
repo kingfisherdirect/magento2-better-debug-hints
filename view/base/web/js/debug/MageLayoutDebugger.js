@@ -47,8 +47,8 @@ define(['../highlights'], function (highlights) {
          * elements.
          *
          * It does try to find 2 script tags:
-         * - `<script type="text/mage-debug" data-mage-debug-position="start"/>`
-         * - `<script type="text/mage-debug" data-mage-debug-position="end"/>`
+         * - `<script type="text/mage-debug" data-mage-debug-position="start"></script>`
+         * - `<script type="text/mage-debug" data-mage-debug-position="end"></script>`
          *
          * And then it considers everything in between as a layout output
          */
