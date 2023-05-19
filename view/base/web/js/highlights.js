@@ -12,7 +12,7 @@ define([], function () {
             highlightEl.style.zIndex = 999999
             highlightEl.style.padding = ".5em"
             highlightEl.style.cursor = "pointer"
-            highlightEl.style.fontSize = ".8rem"
+            highlightEl.style.fontSize = "1rem"
 
             if (html) {
                 highlightEl.innerHTML = `
