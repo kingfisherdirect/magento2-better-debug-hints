@@ -17,8 +17,11 @@ Features:
 
 ## Installation
 
+This package is not intended to be used in production.
+
 ```sh
 composer require --dev kingfisherdirect/magento2-better-debug-hints
+bin/magento setup:upgrade
 ```
 
 ## Usage
