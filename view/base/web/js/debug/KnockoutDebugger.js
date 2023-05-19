@@ -19,8 +19,7 @@ define(['knockout', '../highlights'], function (ko, highlights) {
         constructor (layoutHints, options = {}) {
             this.layoutHints = layoutHints
 
-            this.labelStyles = options.labelStyles || ''
-            this.largerFontSize = options.largerFontSize || ''
+            this.largerFontSize = options.largerFontSize || '1em'
 
             this.initTemplateCollector()
         }
@@ -83,24 +82,24 @@ define(['knockout', '../highlights'], function (ko, highlights) {
                 throw new Error("This element is not inspectable!")
             }
 
-            var context = ko.contextFor(element)
-            var templates = new Set(this.templates.get(element))
+            const context = ko.contextFor(element)
+            const templates = new Set(this.templates.get(element))
 
             while (ko.contextFor(element.parentElement) === context) {
                 element = element.parentElement
 
                 // merge templates
                 if (this.templates.has(element)) {
-                    for (var template of this.templates.get(element)) {
+                    for (let template of this.templates.get(element)) {
                         templates.add(template)
                     }
                 }
             }
 
-            var parent = element.parentElement
-            var elements = []
+            const parent = element.parentElement
+            const elements = []
 
-            for (var child of parent.children) {
+            for (let child of parent.children) {
                 if (ko.contextFor(child) === context) {
                     elements.push(child)
                 }
@@ -109,38 +108,33 @@ define(['knockout', '../highlights'], function (ko, highlights) {
             return { element, elements, context, templates }
         }
 
-        highlight (data, { printOnClick = true } = {}) {
-            var $data = data.context.$data
+        getHighlightsData (element) {
+            const inspectable = this.getInspectable(element)
+            const $data = inspectable.context.$data
 
-            var content
-            var names = getNames(data)
-
-            content = `<p>
-                <span style="${this.labelStyles}">KO</span>
-                ${names.map(n => `<span style="${this.labelStyles}"><b>${n}</b></span>`).join(' ')}
-            </p>`
+            let content = ''
 
             if ($data.component) {
-                content += `<p><code>${$data.component}</code></p>`
+                content += `<div>Comp: <code>${$data.component}</code></div>`
             }
 
             if ($data.template) {
-                content += `<p><code>${$data.template}</code></p>`
+                content += `<div>Templ: <code>${$data.template}</code></div>`
             }
 
-            for (var el of data.elements) {
-                var highlightEl = highlights.create(el, content)
-
-                if (printOnClick) {
-                    highlightEl.addEventListener("click", () => this.consolePrint(data))
-                }
-
-                highlightEl.addEventListener("click", event => this.layoutHints.onClickHighlight(event))
-                highlightEl.addEventListener("contextmenu", event => this.layoutHints.onRightClickHighlight(data, event))
-            }
+            return [{
+                badges: getNames(inspectable),
+                content
+            }]
         }
 
-        consolePrint (data, { groupPrefix = "", collapse = false, withParent = true } = {}) {
+        consolePrint (element, { groupPrefix = "", collapse = false } = {}) {
+            if (!this.isInspectable(element)) {
+                return
+            }
+
+            const data = this.getInspectable(element)
+
             var context = data.context
             var $data = context.$data
 
@@ -149,15 +143,13 @@ define(['knockout', '../highlights'], function (ko, highlights) {
 
             if (collapse) {
                 console.groupCollapsed(
-                    `${groupPrefix}%cKO%c${nameString}`,
-                    this.labelStyles,
-                    ...names.map(n => this.labelStyles)
+                    `${groupPrefix}%c${nameString}`,
+                    ...names.map(n => this.badgeStyle)
                 )
             } else {
                 console.group(
-                    `${groupPrefix}%cKO%c${nameString}`,
-                    `${this.labelStyles}; font-size: ${this.largerFontSize};`,
-                    ...names.map(n => `${this.labelStyles}; font-size: ${this.largerFontSize};`)
+                    `${groupPrefix}%c${nameString}`,
+                    ...names.map(n => `${this.badgeStyle}; font-size: ${this.largerFontSize};`)
                 )
             }
 
@@ -197,14 +189,6 @@ define(['knockout', '../highlights'], function (ko, highlights) {
                     }
 
                     console.log(`KO Template ref:\n%c${ref}`, `font-size: ${this.largerFontSize}; font-weight: bold;`);
-                }
-
-                if (withParent) {
-                    var parent = this.layoutHints.findInspectable(data.element.parentElement)
-
-                    if (parent) {
-                        this.layoutHints.consolePrint(parent, { groupPrefix: "Parent: ", collapse: true, withParent: true, withChildren: false })
-                    }
                 }
             }
 

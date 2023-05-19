@@ -1,9 +1,9 @@
 define([], function () {
     return class MageInitDebugger {
-        constructor (layoutHints) {
-            this.layoutHints = layoutHints
-            this.inits = new Map()
+        constructor (options = {}) {
+            this.largerFontSize = options.largerFontSize || '1em'
 
+            this.inits = new Map()
             this.collectInits()
         }
 
@@ -23,9 +23,9 @@ define([], function () {
                     ? this.inits.get(targetElement)
                     : []
 
-                var mageInit = script
+                var mageInit = JSON.parse(script
                     ? el.innerHTML
-                    : el.dataset.mageInit
+                    : el.dataset.mageInit)
 
                 elementInits.push({
                     el: targetElement,
@@ -34,6 +34,67 @@ define([], function () {
                 })
 
                 this.inits.set(targetElement, elementInits)
+            }
+        }
+
+        isInspectable (element) {
+            return this.inits.has(element)
+        }
+
+        getHighlightsData (element) {
+            const highlightData = []
+
+            const init = this.inits.get(element)
+            const badges = [`${init.length} inits`]
+
+            let insideInits = 0
+            let headInits = 0
+
+            for (var [initElement, initConfigs] of this.inits) {
+                if (element.contains(initElement) && initElement !== element) {
+                    insideInits += initConfigs.length
+                }
+
+                if (element === document.body && document.head.contains(initElement)) {
+                    headInits += initConfigs.length
+                }
+            }
+
+            if (insideInits > 0) {
+                badges.push(`${insideInits} inside`)
+            }
+
+            if (headInits > 0) {
+                badges.push(`${headInits} head inits`)
+            }
+
+            return [{ badges }]
+        }
+
+        consolePrint (element) {
+            const inits = this.inits.get(element)
+
+            if (!inits) {
+                return
+            }
+
+            inits.forEach(init => {
+                const initType = init.script
+                    ? '<script> init'
+                    : 'data-mage-init'
+
+                console.group(`%c${initType}`, `${this.badgeStyle || ''}; font-size: ${this.largerFontSize}`)
+                if (element !== init.el) {
+                    console.log("Element: ", init.el)
+                }
+                console.log("Options: ", init.mageInit)
+                console.groupEnd()
+            })
+
+            if (element === document.body) {
+                console.group('%cHead Inits:', `font-size: ${this.largerFontSize}`)
+                this.consolePrint(document.head)
+                console.groupEnd()
             }
         }
 

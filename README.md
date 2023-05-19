@@ -8,6 +8,7 @@ Features:
 
 - **Does not affect structure** or existing styles 👌
 - Detects **Knockout** components and templates 🤜
+- Detects **jQuery** widget registration and usage 💲
 - Finds Magento **mage-init scripts** within templates/layouts 📌
 - Uses dev-tools like **element picker** to select elements 🔫
 - Prints **browseable structure** and internal informations in console 👀

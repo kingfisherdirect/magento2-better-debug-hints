@@ -1,21 +1,26 @@
 define([
     './highlights',
+    './debug/JQueryWidgetDebugger',
     './debug/KnockoutDebugger',
     './debug/MageLayoutDebugger',
     './debug/MageInitDebugger'
-], function (highlights, KnockoutDebugger, MageLayoutDebugger, MageInitDebugger) {
+], function (highlights, JQueryWidgetDebugger, KnockoutDebugger, MageLayoutDebugger, MageInitDebugger) {
     var colors = {
-        blue4: "36 47 155",
-        blue3: "100 111 212",
-        blue2: "155 163 235",
-        blue1: "219 223 253",
-        navy:  "42 37 80",
-        brown: "84 18 18",
+        blue5:  "36 80 190",
+        blue4:  "36 47 155",
+        blue3:  "100 111 212",
+        blue2:  "155 163 235",
+        blue1:  "219 223 253",
+        navy:   "42 37 80",
+        brown:  "84 18 18",
+        orange: "225 70 0"
     }
-    var labelStyle = "padding-left: 3px; padding-right: 3px; border-radius: 3px; margin-right: .5em; display: inline-block; cursor: pointer;"
+    var labelStyle = "padding-left: 3px; padding-right: 3px; border-radius: 3px; margin-right: .5em; display: inline-block; font-weight: bold; cursor: pointer;"
+    var labelStyleAqua = `${labelStyle} background: rgb(${colors.blue5}); color: white;`
     var labelStyleBlue = `${labelStyle} background: rgb(${colors.blue4}); color: white;`
     var labelStyleNavy = `${labelStyle} background: rgb(${colors.navy}); color: white;`
     var labelStyleBrown = `${labelStyle} background: rgb(${colors.brown}); color: white;`
+    var labelStyleOrange = `${labelStyle} background: rgb(${colors.orange}); color: white;`
 
     return class LayoutHints {
         constructor (mageLayoutTree, initOptions) {
@@ -27,28 +32,33 @@ define([
 
             this.debuggers = {}
 
-            this.debuggers.mageInit = new MageInitDebugger(this)
-
             this.debuggers.mageLayout = new MageLayoutDebugger(
-                this,
                 mageLayoutTree,
                 {
                     largerFontSize: "1.25em",
-                    labelStyleBlue,
                     labelStyleNavy,
                     labelStyleBrown,
                     blockEditUrl: initOptions.blockEditUrl,
-                    mageInitDebugger: this.debuggers.mageInit
                 }
             )
 
-            this.debuggers.knockout = new KnockoutDebugger(
-                this,
-                {
-                    largerFontSize: "1.25em",
-                    labelStyles: labelStyleBrown,
-                }
-            )
+            this.debuggers.mageInit = new MageInitDebugger({
+                largerFontSize: "1.25em",
+            })
+
+            this.debuggers.jqueryWidget = new JQueryWidgetDebugger({
+                largerFontSize: "1.25em",
+            })
+
+            this.debuggers.knockout = new KnockoutDebugger(this, {
+                largerFontSize: "1.25em",
+                labelStyles: labelStyleBrown,
+            })
+
+            this.debuggers.mageInit.badgeStyle = labelStyleBlue
+            this.debuggers.mageLayout.badgeStyle = labelStyleOrange
+            this.debuggers.jqueryWidget.badgeStyle = labelStyleAqua
+            this.debuggers.knockout.badgeStyle = labelStyleBrown
 
             // set up basic highlight styles
             document.documentElement.style.setProperty('--hl-bg', `rgb(${colors.blue1} / .85)`)
@@ -67,7 +77,6 @@ define([
             }
 
             this.highlight(inspectable, { printOnClick: false })
-            this.consolePrint(inspectable)
         }
 
         findInspectable (element) {
@@ -79,11 +88,7 @@ define([
                         continue
                     }
 
-                    var inspectable = typeDebugger.getInspectable(element)
-                    inspectable.element = element
-                    inspectable.type = type
-
-                    return inspectable
+                    return element
                 }
             } while (element = element.parentElement)
         }
@@ -110,42 +115,94 @@ define([
             this.highlight(closestHighlightable)
         }
 
-        highlight (data, options) {
-            if (!this.debuggers[data.type] || typeof this.debuggers[data.type].highlight !== 'function') {
-                throw new Error(`Cannot highlight element of type ${data.type}`)
+        highlight (element) {
+            let elementsData = new Map()
+
+            // collect data from debuggers
+            for (let type in this.debuggers) {
+                const typeDebugger = this.debuggers[type]
+
+                if (typeof typeDebugger.isInspectable !== 'function'
+                    || typeof typeDebugger.getHighlightsData !== 'function'
+                    || !typeDebugger.isInspectable(element)
+                ) {
+                    continue
+                }
+
+                const highlights = typeDebugger.getHighlightsData(element)
+
+                for (const highlight of highlights) {
+                    const highlightedEl = highlight.element || element
+
+                    const elementData = elementsData.get(highlightedEl) || []
+                    elementData.push(Object.assign(highlight, { type }))
+
+                    elementsData.set(highlightedEl, elementData)
+                }
             }
 
-            return this.debuggers[data.type].highlight(data, options)
-        }
+            for (const [highlightedEl, highlightData] of elementsData) {
+                let content = ''
 
-        consolePrint (data, options) {
-            if (!this.debuggers[data.type] || typeof this.debuggers[data.type].consolePrint !== 'function') {
-                throw new Error(`Cannot consolePrint element of type ${data.type}`)
+                for (let highlight of highlightData) {
+                    content += `<div style="margin-bottom: .25em;">`
+
+                    for (var badge of highlight?.badges || []) {
+                        content += `<span style="${this.debuggers[highlight.type].badgeStyle || labelStyleBlue}">${badge}</span>`
+                    }
+
+                    content += `<small>@ ${highlight.type}</small>`
+
+                    if (highlight.content) {
+                        content += `<div>${highlight.content}</div>`
+                    }
+
+                    content += `</div>`
+                }
+
+                const highlightOverlay = highlights.create(highlightedEl, content)
+
+                if (highlightedEl === element) {
+                    highlightOverlay.addEventListener("click", event => this.onClickHighlight(element, event))
+                    highlightOverlay.addEventListener("contextmenu", event => this.onRightClickHighlight(element, event))
+                }
             }
-
-            return this.debuggers[data.type].consolePrint(data, options)
         }
 
-        onClickHighlight (e) {
-            if (e.target.tagName === 'A') {
+        onClickHighlight (element, event) {
+            if (event.target.tagName === 'A') {
                 return
             }
 
-            e.preventDefault()
+            console.group("Inspecting: ", element)
+
+            for (var type in this.debuggers) {
+                if (typeof this.debuggers[type].consolePrint === 'function') {
+                    try {
+                        this.debuggers[type].consolePrint(element)
+                    } catch (e) {
+                        console.error(e)
+                    }
+                }
+            }
+
+            console.groupEnd()
+
+            event.preventDefault()
             highlights.clear()
             this.removeMouseTracker()
         }
 
-        onRightClickHighlight (inspectable, event) {
+        onRightClickHighlight (element, event) {
             event.preventDefault()
             highlights.clear()
             this.removeMouseTracker()
 
-            if (!inspectable.element.parentElement) {
+            if (!element.parentElement) {
                 return
             }
 
-            var parentInspectable = this.findInspectable(inspectable.element.parentElement)
+            var parentInspectable = this.findInspectable(element.parentElement)
 
             if (!parentInspectable) {
                 return

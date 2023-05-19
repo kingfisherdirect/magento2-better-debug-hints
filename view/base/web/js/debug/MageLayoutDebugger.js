@@ -1,12 +1,10 @@
 define(['../highlights'], function (highlights) {
     return class MageLayoutDebugger {
-        constructor (layoutHints, layoutTree, options = {}) {
-            this.layoutHints = layoutHints
+        constructor (layoutTree, options = {}) {
             this.mageInitDebugger = options.mageInitDebugger
             this.blockEditUrl = options.blockEditUrl
 
-            this.largerFontSize = options.largerFontSize || ''
-            this.labelStyleBlue = options.labelStyleBlue || ''
+            this.largerFontSize = options.largerFontSize || '1em'
             this.labelStyleBrown = options.labelStyleBrown || ''
             this.labelStyleNavy = options.labelStyleNavy || ''
 
@@ -102,73 +100,81 @@ define(['../highlights'], function (highlights) {
             return { layout: element.mageLayout }
         }
 
-        highlight (data, { printOnClick = true } = {}) {
-            var layoutElement = data.layout
+        getHighlightsData (element) {
+            const layout = element.mageLayout
+            const badges = layout.name ? [layout.name] : layout.handles
 
-            var names = layoutElement.name ? [layoutElement.name] : layoutElement.handles
-            var namesHtml = names.map(n => `<b style="${this.labelStyleBlue}">${n}</b>`).join('')
+            if (layout.alias) {
+                badges.push(`Alias: ${layout.alias}`)
+            }
 
-            var alias = layoutElement.alias ? `Alias: <b>${layoutElement.alias}</b>` : ''
-            var label = layoutElement.label ? `<span style="${this.labelStyleNavy}">${layoutElement.label}</span>` : ''
+            var label = layout.label ? `<span>Label: <b>${layout.label}</b></span>` : ''
 
-            var blockEditUrl = this.blockEditUrl && layoutElement.blockId ? this.blockEditUrl.replace("__id__", layoutElement.blockId) : null
-            var blockId = blockEditUrl && layoutElement.blockId ? `<a href="${blockEditUrl}" style="${this.labelStyleBrown}">Edit Block <b>#${layoutElement.blockId}</b></a>` : ''
+            var blockEditUrl = this.blockEditUrl && layout.blockId ? this.blockEditUrl.replace("__id__", layout.blockId) : null
+            var blockId = blockEditUrl && layout.blockId ? `<a href="${blockEditUrl}">Edit Block <b>#${layout.blockId}</b></a>` : ''
 
-            var content = `<p>${namesHtml} ${blockId} ${alias} ${label}</p>`
+            var content = `<div>${blockId} ${label}</div>`
 
-            if (layoutElement.block) {
+            if (layout.block) {
                 content += `
-                    <p><code style="background: transparent">${layoutElement.block.class}</code></p>
-                    <p><code style="background: transparent">${layoutElement.block.template}</code></p>
+                    <div>Class: <code style="background: transparent">${layout.block.class}</code></div>
+                    <div>Template: <code style="background: transparent">${layout.block.template}</code></div>
                 `
             }
 
-            if (layoutElement.moduleName) {
-                content += '<p><small>${layoutElement.moduleName}</small></p>'
+            if (layout.moduleName) {
+                content += '<p><small>${layout.moduleName}</small></p>'
             }
 
-            for (var domEl of layoutElement.elements) {
-                var elementContent = content
-
-                if (this.mageInitDebugger) {
-                    var initInspectables = this.mageInitDebugger.getInspectablesInside(domEl)
-
-                    if (initInspectables.length > 0) {
-                        elementContent += `<p>Mage Inits: <b>${initInspectables.length}</b></p>`
-                    }
+            return layout.elements.map(element => {
+                return {
+                    element,
+                    badges,
+                    content
                 }
-
-                var highlightEl = highlights.create(domEl, elementContent)
-
-                if (printOnClick) {
-                    highlightEl.addEventListener("click", () => this.consolePrint(data))
-                }
-
-                highlightEl.addEventListener("click", event => this.layoutHints.onClickHighlight(event))
-                highlightEl.addEventListener("contextmenu", event => this.layoutHints.onRightClickHighlight(data, event))
-            }
+            })
         }
 
-        consolePrint (data, { collapse = false, withParent = true, withChildren = true, groupPrefix = '' } = {}) {
-            var layoutElement = data.layout
-            var groupName = layoutElement.name ? [layoutElement.name] : layoutElement.handles
+        consolePrint (element, options = {}) {
+            let collapse = false
 
-            var groupNameWithStyles = '%c' + groupName.join('%c')
+            while (!element.mageLayout) {
+                if (!element.parentElement) {
+                    return
+                }
 
-            var label = layoutElement.label || ''
-            var blockId = layoutElement.blockId ? `Block: ${layoutElement.blockId}` : ''
+                element = element.parentElement
+                collapse = true
+            }
+
+            return this.consolePrintElementData(
+                { layout: element.mageLayout },
+                Object.assign({}, options, {
+                    collapse,
+                    groupPrefix: collapse ? 'Closest Layout Element: ' : ''
+                }))
+        }
+
+        consolePrintElementData (elementData, { collapse = false, withParent = true, withChildren = true, groupPrefix = '' } = {}) {
+            const layoutElement = elementData.layout
+            const groupName = layoutElement.name ? [layoutElement.name] : layoutElement.handles
+
+            const groupNameWithStyles = '%c' + groupName.join('%c')
+
+            const label = layoutElement.label || ''
+            const blockId = layoutElement.blockId ? `Block: ${layoutElement.blockId}` : ''
 
             if (!collapse) {
                 console.group(
                     `${groupNameWithStyles}%c${blockId}%c${label}`,
-                    ...groupName.map(() => `${this.labelStyleBlue} font-size: ${this.largerFontSize}`),
+                    ...groupName.map(() => `${this.badgeStyle} font-size: ${this.largerFontSize}`),
                     `${this.labelStyleBrown} font-size: ${this.largerFontSize}`,
                     `${this.labelStyleNavy} font-size: ${this.largerFontSize}`
                 )
             } else {
                 console.groupCollapsed(
                     `${groupPrefix}${groupNameWithStyles}%c${blockId}%c${label}`,
-                    ...groupName.map(a => this.labelStyleBlue),
+                    ...groupName.map(a => this.badgeStyle),
                     `${this.labelStyleBrown}`,
                     `${this.labelStyleNavy}`
                 )
@@ -177,7 +183,7 @@ define(['../highlights'], function (highlights) {
             console.log(`Name:\n%c${groupName.join(" ")}`, "font-weight: bold;");
 
             if (layoutElement.blockId && this.blockEditUrl) {
-                let editUrl = this.blockEditUrl.replace("__id__", layoutElement.blockId)
+                const editUrl = this.blockEditUrl.replace("__id__", layoutElement.blockId)
                 console.log(`Edit Block:\n%c${editUrl}`, "font-weight: bold;")
             }
 
@@ -199,8 +205,9 @@ define(['../highlights'], function (highlights) {
             }
 
             if (layoutElement.parent && withParent) {
+                console.log(layoutElement.parent)
                 // parent element will be certainly magento layout
-                this.consolePrint({ layout: layoutElement.parent }, { collapse: true, withChildren: false, groupPrefix: "Parent: " })
+                this.consolePrintElementData({ layout: layoutElement.parent }, { collapse: true, withChildren: false, groupPrefix: "Parent: " })
             }
 
             if (layoutElement.children && withChildren) {
@@ -208,7 +215,7 @@ define(['../highlights'], function (highlights) {
 
                 for (var childName in layoutElement.children) {
                     // only same type child supported
-                    this.consolePrint({ layout: layoutElement.children[childName] }, { collapse: true, withParent: false })
+                    this.consolePrintElementData({ layout: layoutElement.children[childName] }, { collapse: true, withParent: false })
                 }
 
                 console.groupEnd()
