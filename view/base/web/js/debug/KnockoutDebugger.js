@@ -1,4 +1,4 @@
-define(['knockout', '../highlights'], function (ko, highlights) {
+define(['knockout'], function (ko) {
     function getNames (data) {
         var $data = data.context.$data
         var names = []

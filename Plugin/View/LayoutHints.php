@@ -42,7 +42,7 @@ class LayoutHints
         }
 
         if ($name === 'root') {
-            $html .= $this->getRootScript();
+            $html = $this->getRootScript() . $html;
         }
 
         return

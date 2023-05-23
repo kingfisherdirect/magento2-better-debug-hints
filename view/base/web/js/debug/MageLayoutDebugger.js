@@ -1,4 +1,4 @@
-define(['../highlights'], function (highlights) {
+define([], function () {
     return class MageLayoutDebugger {
         constructor (layoutTree, options = {}) {
             this.mageInitDebugger = options.mageInitDebugger

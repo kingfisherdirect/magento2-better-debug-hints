@@ -1,4 +1,4 @@
-define(['jquery', '../highlights', 'jquery-ui-modules/widget'], function ($, highlights) {
+define(['jquery', 'jquery-ui-modules/widget'], function ($) {
     const registeredWidgets = []
     const initialized = []
 
