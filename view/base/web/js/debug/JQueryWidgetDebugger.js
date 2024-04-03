@@ -4,11 +4,31 @@ define(['jquery', 'jquery-ui-modules/widget'], function ($) {
 
     $.widget = function (_super) {
         const func = function () {
+            const constructorFn = _super.apply(this, arguments)
+
             if (!registeredWidgets.includes(arguments[0])) {
-                registeredWidgets.push(arguments[0])
+                const parent = typeof arguments[1] === 'function'
+                    ? arguments[1]
+                    : null
+
+                const nameParts = arguments[0].split('.')
+                const name = nameParts[nameParts.length - 1]
+
+                const trace = (new Error()).stack.split("\n")
+                const definedAt = trace
+                    .find(line => line.match(/\/version\d+\//) && !line.includes("BetterDebugHints"))
+                    ?.replace(/^@/, '')
+
+                registeredWidgets.push({
+                    fullName: arguments[0],
+                    name,
+                    parent,
+                    constructorFn,
+                    definedAt
+                })
             }
 
-            _super.apply(this, arguments)
+            return constructorFn
         }
 
         Object.assign(func, _super)
@@ -55,9 +75,16 @@ define(['jquery', 'jquery-ui-modules/widget'], function ($) {
             if (element === document.body) {
                 const unusedWidgets = this.filterUnusedWidgets()
 
+                const unusedText = unusedWidgets.map(w => {
+                    const definedAtParts = w.definedAt.split(/version\d+\//)
+                    const definedAt = definedAtParts[definedAtParts.length - 1]
+
+                    return `${w.fullName} <small style="opacity: .6">@ ${definedAt}</small>`
+                }).join("\n")
+
                 highlightsData.push({
                     badges: [`${unusedWidgets.length} Unused jQuery Widgets`],
-                    content: `<pre>${unusedWidgets.join('; ')}</pre>`
+                    content: `<pre>${unusedText}</pre>`
                 })
             }
 
@@ -86,12 +113,36 @@ define(['jquery', 'jquery-ui-modules/widget'], function ($) {
         }
 
         filterUnusedWidgets () {
-            return registeredWidgets.filter(widgetName => {
-                const parts = widgetName.split('.')
-                const name = parts[parts.length - 1]
+            const registeredWidgetsRev = [...registeredWidgets].reverse()
+            const usedWidgets = new Set()
 
-                return !initialized.find(init => init.widget === name)
-            })
+            for (const init of initialized) {
+                const directlyUsedWidget = registeredWidgetsRev.find(widget => init.widget === widget.name)
+
+                if (!directlyUsedWidget) {
+                    continue
+                }
+
+                usedWidgets.add(directlyUsedWidget)
+                let parentConstructor = directlyUsedWidget.parent
+
+                console.log(directlyUsedWidget.name)
+
+                while (parentConstructor) {
+                    const parentInit = registeredWidgetsRev.find(widget => widget.constructorFn === parentConstructor)
+
+                    if (!parentInit) {
+                        break
+                    }
+
+                    usedWidgets.add(parentInit)
+                    parentConstructor = parentInit.parent
+
+                    console.log(parentInit)
+                }
+            }
+
+            return registeredWidgets.filter(widget => !usedWidgets.has(widget))
         }
 
         dump () {
