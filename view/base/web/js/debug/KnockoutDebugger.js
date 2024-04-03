@@ -194,9 +194,62 @@ define(['knockout'], function (ko) {
 
             console.log("Elements:\n", ...data.elements)
             console.log("Context:\n", data.context)
-            console.log("Data:\n", data.context.$data)
+            const observables = this.findObservables(data.context.$data)
+            console.log("Observable Data:\n", this.readObservables(observables))
 
             console.groupEnd()
+        }
+
+        findObservables(object, lvl = 0) {
+            const observables = {}
+
+            if (lvl > 3) {
+                return null
+            }
+
+            for (var key in object) {
+                if (['_super', '_elems'].includes(key)) {
+                    continue
+                }
+
+                if (ko.isObservable(object[key])) {
+                    observables[key] = object[key]
+
+                    continue
+                }
+
+                if (typeof object !== 'object') {
+                    continue
+                }
+
+                const nested = this.findObservables(object[key], lvl + 1)
+
+                if (nested) {
+                    observables[key] = nested
+                }
+            }
+
+            if (Object.keys(observables).length > 0) {
+                return observables
+            }
+
+            return null
+        }
+
+        readObservables(object) {
+            const data = {}
+
+            for (const key in object) {
+                if (ko.isObservable(object[key])) {
+                    data[key] = object[key]()
+
+                    continue
+                }
+
+                data[key] = this.readObservables(object[key])
+            }
+
+            return data
         }
     }
 })
