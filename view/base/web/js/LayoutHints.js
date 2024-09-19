@@ -69,7 +69,7 @@ define([
         }
 
         inspect (element) {
-            var inspectable = this.findInspectable(element)
+            var { element: inspectable } = this.findInspectable(element)
 
             if (!inspectable) {
                 console.error("No element found")
@@ -88,7 +88,7 @@ define([
                         continue
                     }
 
-                    return element
+                    return { element, debugger: type }
                 }
             } while (element = element.parentElement)
         }
@@ -106,7 +106,7 @@ define([
             highlights.clear()
 
             var elementUnderMouse = document.elementsFromPoint(event.clientX, event.clientY).shift()
-            var closestHighlightable = this.findInspectable(elementUnderMouse)
+            var { element: closestHighlightable } = this.findInspectable(elementUnderMouse)
 
             if (!closestHighlightable) {
                 return
@@ -162,10 +162,8 @@ define([
 
                 const highlightOverlay = highlights.create(highlightedEl, content)
 
-                if (highlightedEl === element) {
-                    highlightOverlay.addEventListener("click", event => this.onClickHighlight(element, event))
-                    highlightOverlay.addEventListener("contextmenu", event => this.onRightClickHighlight(element, event))
-                }
+                highlightOverlay.addEventListener("click", event => this.onClickHighlight(element, event))
+                highlightOverlay.addEventListener("contextmenu", event => this.onRightClickHighlight(element, event))
             }
         }
 
@@ -198,11 +196,23 @@ define([
             highlights.clear()
             this.removeMouseTracker()
 
+            const inspectable = this.findInspectable(element)
+
+            // offload parent element searching to current debugger
+            const parentInspectables = inspectable && typeof this.debuggers[inspectable.debugger]?.parentInspectableElements === 'function'
+                ? this.debuggers[inspectable.debugger].parentInspectableElements(element)
+                : []
+
+            // only consider it it's parent in debugger, but sibbling in HTML DOM
+            if (parentInspectables[0] && parentInspectables[0].parentElement === element.parentElement) {
+                return this.highlight(parentInspectables[0])
+            }
+
             if (!element.parentElement) {
                 return
             }
 
-            var parentInspectable = this.findInspectable(element.parentElement)
+            var { element: parentInspectable } = this.findInspectable(element.parentElement)
 
             if (!parentInspectable) {
                 return

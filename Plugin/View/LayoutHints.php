@@ -132,7 +132,8 @@ class LayoutHints
             'template' => $block->getTemplateFile(),
             'moduleName' => $block->getModuleName(),
             'nameInLayout' => $block->getNameInLayout(),
-            'cacheKeyInfo' => @$block->getCacheKeyInfo()
+            'cacheKeyInfo' => @$block->getCacheKeyInfo(),
+            'cacheLifetime' => $block->getCacheLifetime()
         ];
     }
 

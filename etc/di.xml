@@ -5,4 +5,8 @@
         <plugin name="KingfisherDirect_BetterDebugHints::layoutHints" type="KingfisherDirect\BetterDebugHints\Plugin\View\LayoutHints"/>
     </type>
 
+    <type name="Magento\Framework\View\Element\AbstractBlock">
+        <plugin name="KingfisherDirect_BetterDebugHints::aliasHints" type="KingfisherDirect\BetterDebugHints\Plugin\View\AliasHints"/>
+    </type>
+
 </config>

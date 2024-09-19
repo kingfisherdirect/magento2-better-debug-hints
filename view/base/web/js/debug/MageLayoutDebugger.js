@@ -100,6 +100,16 @@ define([], function () {
             return { layout: element.mageLayout }
         }
 
+        parentInspectableElements (element) {
+            const inspectable = element.mageLayout
+
+            if (!inspectable || !inspectable.parent) {
+                return
+            }
+
+            return inspectable.parent.elements
+        }
+
         getHighlightsData (element) {
             const layout = element.mageLayout
             const badges = layout.name ? [layout.name] : layout.handles
@@ -120,10 +130,10 @@ define([], function () {
                     <div>Class: <code style="background: transparent">${layout.block.class}</code></div>
                     <div>Template: <code style="background: transparent">${layout.block.template}</code></div>
                 `
-            }
 
-            if (layout.moduleName) {
-                content += '<p><small>${layout.moduleName}</small></p>'
+                if (layout.block.cacheLifetime) {
+                    content += `<div>Cache Lifetime: <code style="background: transparent">${layout.block.cacheLifetime}</code></div>`
+                }
             }
 
             return layout.elements.map(element => {
