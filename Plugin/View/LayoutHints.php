@@ -5,6 +5,7 @@ namespace KingfisherDirect\BetterDebugHints\Plugin\View;
 use KingfisherDirect\BetterDebugHints\Helper\Config;
 use Magento\Backend\Helper\Data;
 use Magento\Cms\Block\Widget\Block as WidgetBlock;
+use Magento\Framework\View\Helper\SecureHtmlRenderer;
 use Magento\Framework\Interception\InterceptorInterface;
 use Magento\Framework\View\Element\AbstractBlock;
 use Magento\Framework\View\Layout;
@@ -16,8 +17,12 @@ class LayoutHints
     private string $blockEditUrl;
     private bool $isEnabled;
 
-    public function __construct(Layout $layout, Config $config, Data $helperBackend)
-    {
+    public function __construct(
+        Layout $layout,
+        Config $config,
+        Data $helperBackend,
+        private SecureHtmlRenderer $secureHtmlRenderer
+    ) {
         $this->blockEditUrl = $helperBackend->getUrl('cms/block/edit', ['block_id' => '__id__']);
         $this->isEnabled = $config->isHintEnabled();
         $this->layout = $this->isEnabled ? $layout : null;
@@ -55,28 +60,32 @@ class LayoutHints
     {
         $structure = $this->getStructure();
         $structureJson = json_encode($structure);
-
         $blockEditUrl = $this->getBlockEditUrl();
 
-        return <<<HTML
-            <script>
-                window.layoutStructure = {$structureJson};
+        return $this->secureHtmlRenderer->renderTag('script', ['type' => 'text/javascript'], <<<JS
+            // const _bdh = {
+            //     async db () {
+            //         const mod = await import("{$dbProfileJS}")
+            //         return mod.dbProfile({$dbQueryProfileJson})
+            //     }
+            // }
 
-                require(['KingfisherDirect_BetterDebugHints/js/LayoutHints'], function (LayoutHints) {
-                    var layoutHints = new LayoutHints(window.layoutStructure, {
-                        blockEditUrl: '{$blockEditUrl}',
-                    });
-
-                    if (!window.layout) {
-                        window.layout = layoutHints.inspect.bind(layoutHints)
-                    }
-
-                    if (!window.lh) {
-                        window.lh = layoutHints
-                    }
+            require(['KingfisherDirect_BetterDebugHints/js/LayoutHints'], function (LayoutHints) {
+                var layoutHints = new LayoutHints({$structureJson}, {
+                    blockEditUrl: "{$blockEditUrl}",
                 });
-            </script>
-        HTML;
+
+                if (!window.layout) {
+                    window.layout = layoutHints.inspect.bind(layoutHints)
+                }
+
+                _bdh.lh = layoutHints
+
+                if (!window.lh) {
+                    window.lh = layoutHints
+                }
+            });
+        JS, false);
     }
 
     private function getBlockEditUrl(): string

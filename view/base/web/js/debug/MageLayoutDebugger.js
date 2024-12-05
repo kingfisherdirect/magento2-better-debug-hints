@@ -60,7 +60,9 @@ define([], function () {
             var ending = matching.find(el => el.dataset.mageDebugPosition === 'end')
 
             if (nonHelpers.length === 0 && starting && ending) {
-                if (starting.parentElement === ending.parentElement) {
+                if (starting.parentElement !== ending.parentElement) {
+                    console.error(`Starting and ending script parentElement mismatch for ${name}`)
+                } else {
                     var parent = starting.parentElement
                     var started = false
 
