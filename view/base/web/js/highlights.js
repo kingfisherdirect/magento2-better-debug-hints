@@ -32,6 +32,18 @@ define([], function () {
             highlightEl.style.width = elPos.width + "px"
             highlightEl.style.height = elPos.height + "px"
 
+            if (html) {
+                // remove sticky to allow better scrolling if content exceeds highlgiht
+                const content = highlightEl.children[0]
+                const { height } = content.getBoundingClientRect()
+
+                console.log(height, window.innerHeight)
+
+                if (height > window.innerHeight) {
+                    content.style.position = "static"
+                }
+            }
+
             return highlightEl
         },
 
