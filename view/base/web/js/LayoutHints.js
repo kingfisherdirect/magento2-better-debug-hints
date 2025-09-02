@@ -91,6 +91,8 @@ define([
                     return { element, debugger: type }
                 }
             } while (element = element.parentElement)
+
+            return {}
         }
 
         addMouseTracker () {
@@ -142,6 +144,10 @@ define([
             }
 
             for (const [highlightedEl, highlightData] of elementsData) {
+                if (!(highlightedEl instanceof Element)) {
+                    continue
+                }
+
                 let content = ''
 
                 for (let highlight of highlightData) {
@@ -205,7 +211,7 @@ define([
 
             // in certain cases (container without own html element) parent element will be on same level
             for (const parentInspectable of parentInspectables) {
-                if (parentInspectable.parentElement === element.parentElement) {
+                if (!element.parentElement || parentInspectable.parentElement === element.parentElement) {
                     return this.highlight(parentInspectables[0])
                 }
             }
