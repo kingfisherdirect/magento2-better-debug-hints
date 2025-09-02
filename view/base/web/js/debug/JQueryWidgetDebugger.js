@@ -126,8 +126,6 @@ define(['jquery', 'jquery-ui-modules/widget'], function ($) {
                 usedWidgets.add(directlyUsedWidget)
                 let parentConstructor = directlyUsedWidget.parent
 
-                console.log(directlyUsedWidget.name)
-
                 while (parentConstructor) {
                     const parentInit = registeredWidgetsRev.find(widget => widget.constructorFn === parentConstructor)
 
