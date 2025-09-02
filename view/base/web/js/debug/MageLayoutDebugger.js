@@ -84,10 +84,21 @@ define([], function () {
                 }
             }
 
-            layoutElement.elements.forEach(el => el.mageLayout = layoutElement)
+            if (starting) {
+                const startingComment = document.createComment(name)
+                starting.after(startingComment)
+                starting.remove()
+                layoutElement.elements.unshift(startingComment)
+            }
 
-            starting && starting.remove()
-            ending && ending.remove()
+            if (ending) {
+                const endingComment = document.createComment(`/ ${name}`)
+                ending.after(endingComment)
+                ending.remove()
+                layoutElement.elements.push(endingComment)
+            }
+
+            layoutElement.elements.forEach(el => el.mageLayout = layoutElement)
         }
 
         isInspectable (element) {
@@ -106,7 +117,7 @@ define([], function () {
             const inspectable = element.mageLayout
 
             if (!inspectable || !inspectable.parent) {
-                return
+                return []
             }
 
             return inspectable.parent.elements
