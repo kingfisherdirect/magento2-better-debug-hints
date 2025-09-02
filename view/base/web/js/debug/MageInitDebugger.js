@@ -79,9 +79,12 @@ define([], function () {
             }
 
             inits.forEach(init => {
-                const initType = init.script
+                let initType = init.script
                     ? '<script> init'
                     : 'data-mage-init'
+
+                const names = Object.keys(init.mageInit['*'] || init.mageInit || {})
+                initType += " " + names.join(", ")
 
                 console.group(`%c${initType}`, `${this.badgeStyle || ''}; font-size: ${this.largerFontSize}`)
                 if (element !== init.el) {

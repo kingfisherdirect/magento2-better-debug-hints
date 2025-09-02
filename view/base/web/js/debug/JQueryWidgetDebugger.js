@@ -98,6 +98,8 @@ define(['jquery', 'jquery-ui-modules/widget'], function ($) {
                 return
             }
 
+            console.group('%cjQuery:', `font-size: ${this.largerFontSize}`)
+
             inits.forEach(initData => {
                 console.group(
                     `%c$.${initData.widget}`,
@@ -110,6 +112,8 @@ define(['jquery', 'jquery-ui-modules/widget'], function ($) {
             if (document.body === element) {
                 console.log("Unused jQuery Widgets: ", this.filterUnusedWidgets())
             }
+
+            console.groupEnd()
         }
 
         filterUnusedWidgets () {
@@ -135,8 +139,6 @@ define(['jquery', 'jquery-ui-modules/widget'], function ($) {
 
                     usedWidgets.add(parentInit)
                     parentConstructor = parentInit.parent
-
-                    console.log(parentInit)
                 }
             }
 
