@@ -203,9 +203,11 @@ define([
                 ? this.debuggers[inspectable.debugger].parentInspectableElements(element)
                 : []
 
-            // only consider it it's parent in debugger, but sibbling in HTML DOM
-            if (parentInspectables[0] && parentInspectables[0].parentElement === element.parentElement) {
-                return this.highlight(parentInspectables[0])
+            // in certain cases (container without own html element) parent element will be on same level
+            for (const parentInspectable of parentInspectables) {
+                if (parentInspectable.parentElement === element.parentElement) {
+                    return this.highlight(parentInspectables[0])
+                }
             }
 
             if (!element.parentElement) {
